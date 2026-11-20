@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Hub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #0d1117; --surface: #151b24; --surface-2: #1c2431; --line: #263041;
+  --fg: #e8edf4; --muted: #8d9aae; --accent: #3ee0c4; --accent-ink: #06231e;
+  --win: #4ade80; --loss: #f87171; --live: #fbbf24;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; padding: 20px 16px 64px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.note { color: var(--muted); font-size: 13px; }
+
+/* header */
+header { display: flex; flex-wrap: wrap; gap: 20px 32px; align-items: flex-end; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.logo { width: 52px; height: 52px; flex: none; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--display); font-size: 34px; font-weight: 700; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; }
+.sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.record { display: flex; gap: 24px; flex-wrap: wrap; }
+.record div { display: flex; flex-direction: column; }
+.record b { font-family: var(--display); font-size: 34px; line-height: 1; font-weight: 700; }
+.w { color: var(--win); } .l { color: var(--loss); }
+
+/* toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar .spacer { flex: 1; }
+button, .btn { font-family: var(--body); font-size: 13px; font-weight: 600; background: var(--surface-2); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.danger:hover, button.armed { border-color: var(--loss); color: var(--loss); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.small { padding: 4px 9px; font-size: 12px; }
+
+/* next match banner */
+.next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 14px 18px; }
+.next .opp { font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.next .when { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--accent); }
+
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h2 { font-size: 28px; text-transform: uppercase; }
+
+/* days + matches */
+.days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.day { flex: none; min-width: 64px; text-align: center; padding: 8px 14px; }
+.day .d { font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.05; display: block; }
+.day .m { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; display: block; }
+.day .dot { display: block; width: 6px; height: 6px; border-radius: 50%; margin: 4px auto 0; background: transparent; }
+.day .dot.has { background: var(--accent); }
+.day[aria-pressed="true"] .m { color: #0d4a3f; }
+.day[aria-pressed="true"] .dot.has { background: var(--accent-ink); }
+.matches { display: grid; gap: 10px; }
+.match { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; grid-template-columns: 64px 1fr auto; gap: 8px 16px; align-items: center; }
+.match .time { font-family: var(--display); font-size: 22px; font-weight: 600; }
+.match .vs { min-width: 0; }
+.match .opp { font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
+.match .meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.result { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.score { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1; }
+.pill { font-size: 11px; font-weight: 700; letter-spacing: .08em; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.pill.win { background: rgba(74,222,128,.16); color: var(--win); }
+.pill.loss { background: rgba(248,113,113,.16); color: var(--loss); }
+.pill.live { background: rgba(251,191,36,.16); color: var(--live); }
+.pill.soon { background: var(--surface-2); color: var(--muted); }
+.actions { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; border-top: 1px dashed var(--line); }
+.empty { color: var(--muted); padding: 24px; border: 1px dashed var(--line); border-radius: 8px; text-align: center; }
+@media (max-width: 520px) { .match { grid-template-columns: 1fr auto; } .match .time { grid-column: 1 / -1; } }
+
+/* achievements */
+.ach { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card h3 { font-size: 22px; line-height: 1.15; overflow-wrap: anywhere; }
+.card .when { font-size: 12px; color: var(--muted); }
+.card.top { border-color: var(--accent); }
+.place { font-family: var(--display); font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; overflow-wrap: anywhere; }
+
+/* table */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; }
+th, td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+th { padding: 0; background: var(--surface-2); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+th button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 10px 14px; cursor: pointer; font-weight: 600; text-align: inherit; }
+th button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+th[aria-sort] { color: var(--accent); }
+td.name { font-weight: 600; }
+td.name small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+.good { color: var(--win); }
+
+/* players */
+.players { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ptop { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.ptop h3 { font-size: 30px; line-height: 1; overflow-wrap: anywhere; }
+.role { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.kd { text-align: right; }
+.kd b { font-family: var(--display); font-size: 34px; line-height: 1; display: block; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats div { background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
+.stats b { font-family: var(--display); font-size: 22px; display: block; line-height: 1.1; }
+.stats span { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.form { display: flex; flex-direction: column; gap: 6px; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 56px; }
+.bars i { flex: 1; background: var(--line); border-radius: 2px 2px 0 0; min-height: 3px; }
+.bars i:last-child { background: var(--accent); }
+
+/* edit forms */
+body:not(.edit) .admin { display: none !important; }
+.panel { background: var(--surface); border: 1px dashed var(--accent); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.panel h3 { font-size: 20px; text-transform: uppercase; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; min-width: 0; }
+input, select { font-family: var(--body); font-size: 14px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+input[type="checkbox"] { width: auto; }
+.check { flex-direction: row !important; align-items: center; gap: 8px !important; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.team-edit { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--accent); color: var(--accent-ink); font-weight: 600; padding: 9px 16px; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); }
+#toast.show { opacity: 1; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo" id="logo" aria-hidden="true">N</div>
+      <div>
+        <h1 id="teamName"></h1>
+        <div class="sub" id="sub"></div>
+      </div>
+    </div>
+    <div class="record num" id="record"></div>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="editToggle" aria-pressed="false">Edit mode</button>
+    <span class="note" id="editHint">Turn on edit mode to add matches, achievements and players.</span>
+    <span class="spacer"></span>
+    <button type="button" id="exportBtn" class="admin">Export backup</button>
+    <button type="button" id="importBtn" class="admin">Import backup</button>
+    <button type="button" id="resetBtn" class="admin danger">Reset to sample</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="panel admin" id="teamPanel">
+    <h3>Team details</h3>
+    <div class="team-edit">
+      <label>Team name<input id="t-name" maxlength="40"></label>
+      <label>Game<input id="t-game" maxlength="40"></label>
+      <label>Region<input id="t-region" maxlength="40"></label>
+      <label>Season<input id="t-season" maxlength="40"></label>
+    </div>
+  </div>
+
+  <div class="next" id="next" hidden></div>
+
+  <section aria-labelledby="mh">
+    <div class="head"><h2 id="mh">Matches</h2><span class="note">Local time</span></div>
+    <div class="days" id="days" role="group" aria-label="Pick a day"></div>
+    <div class="matches" id="matches" aria-live="polite"></div>
+
+    <form class="panel admin" id="matchForm" autocomplete="off">
+      <h3 id="matchFormTitle">Add match</h3>
+      <div class="fields">
+        <label>Date<input type="date" id="m-date" required></label>
+        <label>Time<input type="time" id="m-time" required></label>
+        <label>Opponent<input id="m-opp" required maxlength="50"></label>
+        <label>Event<input id="m-event" maxlength="60" placeholder="League, Scrim, Cup"></label>
+        <label>Status
+          <select id="m-status">
+            <option value="soon">Upcoming</option>
+            <option value="live">Live</option>
+            <option value="win">Win</option>
+            <option value="loss">Loss</option>
+          </select>
+        </label>
+        <label>Score<input id="m-score" maxlength="10" placeholder="2-1"></label>
+        <label>Maps<input id="m-maps" maxlength="120" placeholder="Ascent 13-7, Lotus 13-9"></label>
+      </div>
+      <div class="row">
+        <button type="submit" class="primary" id="matchSubmit">Add match</button>
+        <button type="button" id="matchCancel" hidden>Cancel edit</button>
+      </div>
+    </form>
+  </section>
+
+  <section aria-labelledby="ah">
+    <div class="head"><h2 id="ah">Achievements</h2><span class="note" id="acount"></span></div>
+    <div class="ach" id="ach"></div>
+    <form class="panel admin" id="achForm" autocomplete="off">
+      <h3>Add achievement</h3>
+      <div class="fields">
+        <label>Title<input id="a-title" required maxlength="80" placeholder="Winners, Nova Cup"></label>
+        <label>Placement<input id="a-place" required maxlength="14" placeholder="1st"></label>
+        <label>Date<input type="date" id="a-date" required></label>
+      </div>
+      <div class="row"><button type="submit" class="primary">Add achievement</button></div>
+    </form>
+  </section>
+
+  <section aria-labelledby="sh">
+    <div class="head"><h2 id="sh">Player stats</h2><span class="note">Season totals. Tap a column to sort.</span></div>
+    <div class="tablewrap"><table id="table"></table></div>
+    <div class="players" id="players"></div>
+
+    <form class="panel admin" id="playerForm" autocomplete="off">
+      <h3 id="playerFormTitle">Add player</h3>
+      <div class="fields">
+        <label>Name<input id="p-name" required maxlength="30"></label>
+        <label>Role<input id="p-role" maxlength="30" placeholder="Duelist"></label>
+        <label>Maps<input type="number" min="0" id="p-maps" value="0"></label>
+        <label>Kills<input type="number" min="0" id="p-k" value="0"></label>
+        <label>Deaths<input type="number" min="0" id="p-d" value="0"></label>
+        <label>Assists<input type="number" min="0" id="p-a" value="0"></label>
+        <label>Avg ACS<input type="number" min="0" id="p-acs" value="0"></label>
+        <label>HS %<input type="number" min="0" max="100" step="0.1" id="p-hs" value="0"></label>
+        <label>Map wins<input type="number" min="0" id="p-wins" value="0"></label>
+      </div>
+      <div class="row">
+        <button type="submit" class="primary" id="playerSubmit">Add player</button>
+        <button type="button" id="playerCancel" hidden>Cancel edit</button>
+      </div>
+    </form>
+
+    <form class="panel admin" id="logForm" autocomplete="off">
+      <h3>Log a player's match</h3>
+      <p class="note" style="margin:0">Adds one map to the player's totals, averages and last-7 chart.</p>
+      <div class="fields">
+        <label>Player<select id="l-player" required></select></label>
+        <label>Kills<input type="number" min="0" id="l-k" required></label>
+        <label>Deaths<input type="number" min="0" id="l-d" required></label>
+        <label>Assists<input type="number" min="0" id="l-a" required></label>
+        <label>ACS<input type="number" min="0" id="l-acs" required></label>
+        <label>HS %<input type="number" min="0" max="100" step="0.1" id="l-hs" required></label>
+        <label class="check"><input type="checkbox" id="l-won">Map won</label>
+      </div>
+      <div class="row"><button type="submit" class="primary">Log match</button></div>
+    </form>
+  </section>
+
+  <footer>Everything you add is saved in this browser. Use Export backup to keep a copy or move it to another device.</footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const KEY = "team-hub-v1";
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, "0");
+const fmtDate = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const today = () => fmtDate(new Date());
+const offsetDay = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return fmtDate(d); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (v, d = 0) => (v !== "" && isFinite(+v) ? +v : d);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const STATUS = { win: "Win", loss: "Loss", live: "Live", soon: "Upcoming" };
+
+/* ---------- data ---------- */
+function sampleData() {
+  const M = (day, time, opp, event, status, score, maps) => ({ id: uid(), date: offsetDay(day), time, opp, event, status, score: score || "", maps: maps || "" });
+  return {
+    team: { name: "Team Nova", game: "Valorant", region: "India", season: "Season 4" },
+    matches: [
+      M(-6, "19:00", "Delhi Dragons", "Premier League", "win", "2-0", "Ascent 13-7, Lotus 13-9"),
+      M(-5, "20:30", "Mumbai Mavericks", "Premier League", "loss", "1-2", "Haven 10-13, Bind 13-11, Split 8-13"),
+      M(-4, "18:00", "Pune Phantoms", "Scrim", "win", "2-1", "Icebox 13-8, Fracture 9-13, Sunset 13-10"),
+      M(-2, "19:30", "Kolkata Knights", "Premier League", "win", "2-0", "Ascent 13-4, Pearl 13-6"),
+      M(-1, "21:00", "Hyderabad Hawks", "Premier League", "win", "2-1", "Lotus 13-11, Haven 7-13, Bind 13-9"),
+      M(0, "17:00", "Chennai Chargers", "Scrim", "win", "2-0", "Split 13-5, Icebox 13-10"),
+      M(0, "23:00", "Bengaluru Blaze", "Premier League", "soon"),
+      M(1, "20:00", "Ahmedabad Aces", "Premier League", "soon"),
+    ],
+    achievements: [
+      { id: uid(), date: offsetDay(-25), title: "Winners, Nova Cup Online Qualifier", place: "1st" },
+      { id: uid(), date: offsetDay(-40), title: "Top 4, Subcontinent Open", place: "4th" },
+      { id: uid(), date: offsetDay(-55), title: "Best Tactical Team, Season 3 Awards", place: "Award" },
+      { id: uid(), date: offsetDay(-70), title: "Runners-up, Campus Clash Finals", place: "2nd" },
+    ],
+    players: [
+      { id: uid(), name: "Raze_Arjun", role: "Duelist", maps: 48, k: 912, d: 701, a: 188, acs: 271, hs: 29, wins: 31, form: [248,301,265,290,226,312,284] },
+      { id: uid(), name: "Sova_Meera", role: "Initiator", maps: 48, k: 701, d: 640, a: 402, acs: 218, hs: 24, wins: 31, form: [201,230,215,244,190,226,238] },
+      { id: uid(), name: "Jett_Kabir", role: "Duelist", maps: 45, k: 833, d: 688, a: 164, acs: 254, hs: 31, wins: 28, form: [260,221,270,243,199,276,251] },
+      { id: uid(), name: "Omen_Zoya", role: "Controller", maps: 48, k: 590, d: 612, a: 355, acs: 196, hs: 22, wins: 31, form: [180,205,172,214,188,201,209] },
+      { id: uid(), name: "Sage_Rohan", role: "Sentinel", maps: 42, k: 548, d: 570, a: 421, acs: 187, hs: 20, wins: 26, form: [175,192,183,170,201,194,188] },
+    ],
+  };
+}
+function validData(x) {
+  return x && typeof x === "object" && x.team && typeof x.team === "object" && Array.isArray(x.matches) && Array.isArray(x.achievements) && Array.isArray(x.players);
+}
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { const x = JSON.parse(raw); if (validData(x)) return x; } } catch (e) {}
+  return sampleData();
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast("Could not save in this browser"); } }
+let editMode = false;
+try { editMode = localStorage.getItem(KEY + "-edit") === "1"; } catch (e) {}
+
+let selectedDate = today();
+let editMatchId = null, editPlayerId = null;
+let sortKey = "acs", sortDir = -1;
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function armed(btn, fn) {
+  if (btn.dataset.armed) { fn(); return; }
+  const old = btn.textContent; btn.dataset.armed = "1"; btn.textContent = "Sure?"; btn.classList.add("armed");
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; btn.classList.remove("armed"); } }, 3000);
+}
+const matchTime = (m) => new Date(m.date + "T" + (m.time || "00:00"));
+const sortedMatches = () => [...state.matches].sort((a, b) => matchTime(a) - matchTime(b));
+
+/* ---------- header ---------- */
+function renderHeader() {
+  const t = state.team;
+  $("teamName").textContent = t.name || "Your team";
+  $("logo").textContent = (t.name || "T").trim().charAt(0).toUpperCase() || "T";
+  $("sub").textContent = [t.game, t.region, t.season].filter(Boolean).join(" · ");
+  document.title = (t.name || "Team") + " Hub";
+  const done = sortedMatches().filter((m) => m.status === "win" || m.status === "loss");
+  const w = done.filter((m) => m.status === "win").length;
+  let streak = "-";
+  if (done.length) {
+    const last = done[done.length - 1].status; let n = 0;
+    for (let i = done.length - 1; i >= 0 && done[i].status === last; i--) n++;
+    streak = (last === "win" ? "W" : "L") + n;
+  }
+  $("record").innerHTML =
+    `<div><span class="label">Wins</span><b class="w">${w}</b></div>` +
+    `<div><span class="label">Losses</span><b class="l">${done.length - w}</b></div>` +
+    `<div><span class="label">Win rate</span><b>${done.length ? Math.round((w / done.length) * 100) : 0}%</b></div>` +
+    `<div><span class="label">Streak</span><b class="${streak[0] === "W" ? "w" : streak[0] === "L" ? "l" : ""}">${streak}</b></div>`;
+}
+
+/* ---------- next match banner ---------- */
+function renderNext() {
+  const el = $("next");
+  const live = state.matches.filter((m) => m.status === "live").sort((a, b) => matchTime(a) - matchTime(b))[0];
+  const up = sortedMatches().filter((m) => m.status === "soon")[0];
+  if (live) {
+    el.hidden = false;
+    el.innerHTML = `<div><span class="label">Playing now</span><div class="opp">vs ${esc(live.opp)}</div></div><div class="when">LIVE${live.score ? " · " + esc(live.score) : ""}</div>`;
+  } else if (up) {
+    const diff = matchTime(up) - new Date();
+    let when;
+    if (diff <= 0) when = "Starting soon";
+    else {
+      const mins = Math.floor(diff / 60000), d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+      when = "in " + (d ? d + "d " : "") + (h || d ? h + "h " : "") + m + "m";
+    }
+    el.hidden = false;
+    el.innerHTML = `<div><span class="label">Next match${up.event ? " · " + esc(up.event) : ""}</span><div class="opp">vs ${esc(up.opp)}</div></div><div class="when num">${when}</div>`;
+  } else el.hidden = true;
+}
+
+/* ---------- matches ---------- */
+function renderDays() {
+  const set = new Set(state.matches.map((m) => m.date)); set.add(today());
+  const dates = [...set].sort();
+  $("days").innerHTML = dates.map((d) => {
+    const [y, mo, da] = d.split("-").map(Number);
+    const label = d === today() ? "Today" : DOW[new Date(y, mo - 1, da).getDay()];
+    const has = state.matches.some((m) => m.date === d);
+    return `<button class="day" type="button" data-d="${d}" aria-pressed="${d === selectedDate}"><span class="m">${label}</span><span class="d num">${da}</span><span class="m">${MON[mo - 1]}</span><span class="dot${has ? " has" : ""}"></span></button>`;
+  }).join("");
+  const sel = $("days").querySelector('[aria-pressed="true"]');
+  if (sel) sel.scrollIntoView({ block: "nearest", inline: "center" });
+}
+function renderMatches() {
+  const list = sortedMatches().filter((m) => m.date === selectedDate);
+  if (!list.length) { $("matches").innerHTML = `<div class="empty">No matches on this day.<span class="admin"> Use the form below to add one.</span></div>`; return; }
+  $("matches").innerHTML = list.map((m) => `
+    <article class="match">
+      <div class="time num">${esc(m.time)}</div>
+      <div class="vs"><div class="opp">vs ${esc(m.opp)}</div><div class="meta">${esc(m.event || "")}${m.maps ? (m.event ? " · " : "") + esc(m.maps) : ""}</div></div>
+      <div class="result">${m.score ? `<span class="score num">${esc(m.score)}</span>` : ""}<span class="pill ${m.status}">${STATUS[m.status] || ""}</span></div>
+      <div class="actions admin">
+        <button type="button" class="small" data-act="edit-match" data-id="${m.id}">Edit</button>
+        <button type="button" class="small danger" data-act="del-match" data-id="${m.id}">Delete</button>
+      </div>
+    </article>`).join("");
+}
+$("days").addEventListener("click", (e) => {
+  const b = e.target.closest(".day"); if (!b) return;
+  selectedDate = b.dataset.d; $("m-date").value = selectedDate; renderDays(); renderMatches();
+});
+$("matches").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const id = b.dataset.id;
+  if (b.dataset.act === "edit-match") {
+    const m = state.matches.find((x) => x.id === id); if (!m) return;
+    editMatchId = id;
+    $("m-date").value = m.date; $("m-time").value = m.time; $("m-opp").value = m.opp; $("m-event").value = m.event || "";
+    $("m-status").value = m.status; $("m-score").value = m.score || ""; $("m-maps").value = m.maps || "";
+    $("matchFormTitle").textContent = "Edit match"; $("matchSubmit").textContent = "Save changes"; $("matchCancel").hidden = false;
+    $("matchForm").scrollIntoView({ behavior: "smooth", block: "center" });
+  } else if (b.dataset.act === "del-match") {
+    armed(b, () => { state.matches = state.matches.filter((x) => x.id !== id); if (editMatchId === id) resetMatchForm(); save(); renderAll(); toast("Match deleted"); });
+  }
+});
+function resetMatchForm() {
+  editMatchId = null; $("matchForm").reset(); $("m-date").value = selectedDate; $("m-time").value = "19:00";
+  $("matchFormTitle").textContent = "Add match"; $("matchSubmit").textContent = "Add match"; $("matchCancel").hidden = true;
+}
+$("matchCancel").addEventListener("click", resetMatchForm);
+$("matchForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const rec = { date: $("m-date").value, time: $("m-time").value, opp: $("m-opp").value.trim(), event: $("m-event").value.trim(), status: $("m-status").value, score: $("m-score").value.trim(), maps: $("m-maps").value.trim() };
+  if (!rec.date || !rec.time || !rec.opp) return;
+  if (editMatchId) { Object.assign(state.matches.find((x) => x.id === editMatchId), rec); toast("Match updated"); }
+  else { state.matches.push({ id: uid(), ...rec }); toast("Match added"); }
+  selectedDate = rec.date; save(); resetMatchForm(); renderAll();
+});
+
+/* ---------- achievements ---------- */
+function renderAch() {
+  const list = [...state.achievements].sort((a, b) => b.date.localeCompare(a.date));
+  $("acount").textContent = list.length + " total";
+  $("ach").innerHTML = list.length ? list.map((a) => {
+    const [y, mo, da] = a.date.split("-").map(Number);
+    return `<article class="card${/^(1st|winner)/i.test(a.place) ? " top" : ""}"><span class="place">${esc(a.place)}</span><h3>${esc(a.title)}</h3><span class="when">${MON[mo - 1]} ${da}, ${y}</span>
+      <div class="actions admin"><button type="button" class="small danger" data-act="del-ach" data-id="${a.id}">Delete</button></div></article>`;
+  }).join("") : `<div class="empty">No achievements yet.<span class="admin"> Add your first below.</span></div>`;
+}
+$("ach").addEventListener("click", (e) => {
+  const b = e.target.closest('button[data-act="del-ach"]'); if (!b) return;
+  armed(b, () => { state.achievements = state.achievements.filter((x) => x.id !== b.dataset.id); save(); renderAll(); toast("Achievement deleted"); });
+});
+$("achForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  state.achievements.push({ id: uid(), title: $("a-title").value.trim(), place: $("a-place").value.trim(), date: $("a-date").value });
+  $("achForm").reset(); $("a-date").value = today(); save(); renderAll(); toast("Achievement added");
+});
+
+/* ---------- players ---------- */
+const kd = (p) => (p.d ? p.k / p.d : p.k);
+const winPct = (p) => (p.maps ? Math.round((p.wins / p.maps) * 100) : 0);
+const COLS = [
+  { key: "name", label: "Player" }, { key: "maps", label: "Maps" }, { key: "k", label: "K" }, { key: "d", label: "D" },
+  { key: "a", label: "A" }, { key: "kd", label: "K/D" }, { key: "acs", label: "ACS" }, { key: "hs", label: "HS %" }, { key: "win", label: "Win %" },
+];
+const val = (p, k) => (k === "kd" ? kd(p) : k === "win" ? winPct(p) : p[k]);
+
+function renderTable() {
+  if (!state.players.length) { $("table").innerHTML = `<tbody><tr><td class="note" style="text-align:center;padding:24px">No players yet.</td></tr></tbody>`; return; }
+  const rows = [...state.players].sort((a, b) => {
+    const x = val(a, sortKey), y = val(b, sortKey);
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir;
+  });
+  const best = {}; COLS.slice(1).forEach((c) => (best[c.key] = Math.max(...state.players.map((p) => val(p, c.key)))));
+  $("table").innerHTML = "<thead><tr>" + COLS.map((c) =>
+    `<th scope="col"${c.key === sortKey ? ` aria-sort="${sortDir > 0 ? "ascending" : "descending"}"` : ""}><button type="button" data-k="${c.key}">${c.label}${c.key === sortKey ? (sortDir > 0 ? " ▲" : " ▼") : ""}</button></th>`).join("") +
+    "</tr></thead><tbody>" + rows.map((p) => "<tr>" + COLS.map((c) => {
+      if (c.key === "name") return `<td class="name">${esc(p.name)}<small>${esc(p.role || "")}</small></td>`;
+      const v = val(p, c.key);
+      const shown = c.key === "kd" ? v.toFixed(2) : c.key === "hs" ? Math.round(v * 10) / 10 : v;
+      return `<td class="num${state.players.length > 1 && v === best[c.key] && v > 0 ? " good" : ""}">${shown}</td>`;
+    }).join("") + "</tr>").join("") + "</tbody>";
+}
+$("table").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-k]"); if (!b) return;
+  const k = b.dataset.k;
+  if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === "name" ? 1 : -1; }
+  renderTable();
+});
+
+function renderPlayers() {
+  $("players").innerHTML = state.players.length ? state.players.map((p) => {
+    const form = p.form || [], max = Math.max(1, ...form);
+    const bars = form.map((v) => `<i style="height:${Math.round((v / max) * 100)}%" title="ACS ${v}"></i>`).join("");
+    return `<article class="player">
+      <div class="ptop"><div><h3>${esc(p.name)}</h3><span class="role">${esc(p.role || "")}</span></div><div class="kd"><span class="label">K/D</span><b class="num">${kd(p).toFixed(2)}</b></div></div>
+      <div class="stats num"><div><b>${p.acs}</b><span>ACS</span></div><div><b>${Math.round(p.hs * 10) / 10}%</b><span>HS</span></div><div><b>${p.a}</b><span>Assists</span></div></div>
+      <div class="form"><span class="label">ACS, last ${form.length || 0} matches</span>${form.length ? `<div class="bars" role="img" aria-label="ACS over recent matches: ${form.join(", ")}">${bars}</div>` : `<span class="note">No matches logged yet.</span>`}</div>
+      <div class="actions admin">
+        <button type="button" class="small" data-act="log" data-id="${p.id}">Log match</button>
+        <button type="button" class="small" data-act="edit-player" data-id="${p.id}">Edit</button>
+        <button type="button" class="small danger" data-act="del-player" data-id="${p.id}">Delete</button>
+      </div></article>`;
+  }).join("") : `<div class="empty">No players yet.<span class="admin"> Add your roster below.</span></div>`;
+  $("l-player").innerHTML = state.players.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join("");
+}
+$("players").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const id = b.dataset.id, p = state.players.find((x) => x.id === id); if (!p) return;
+  if (b.dataset.act === "edit-player") {
+    editPlayerId = id;
+    $("p-name").value = p.name; $("p-role").value = p.role || ""; $("p-maps").value = p.maps; $("p-k").value = p.k; $("p-d").value = p.d;
+    $("p-a").value = p.a; $("p-acs").value = p.acs; $("p-hs").value = p.hs; $("p-wins").value = p.wins;
+    $("playerFormTitle").textContent = "Edit " + p.name; $("playerSubmit").textContent = "Save changes"; $("playerCancel").hidden = false;
+    $("playerForm").scrollIntoView({ behavior: "smooth", block: "center" });
+  } else if (b.dataset.act === "log") {
+    $("l-player").value = id; $("logForm").scrollIntoView({ behavior: "smooth", block: "center" }); $("l-k").focus();
+  } else if (b.dataset.act === "del-player") {
+    armed(b, () => { state.players = state.players.filter((x) => x.id !== id); if (editPlayerId === id) resetPlayerForm(); save(); renderAll(); toast("Player deleted"); });
+  }
+});
+function resetPlayerForm() {
+  editPlayerId = null; $("playerForm").reset();
+  $("playerFormTitle").textContent = "Add player"; $("playerSubmit").textContent = "Add player"; $("playerCancel").hidden = true;
+}
+$("playerCancel").addEventListener("click", resetPlayerForm);
+$("playerForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const maps = Math.max(0, Math.round(num($("p-maps").value)));
+  const rec = {
+    name: $("p-name").value.trim(), role: $("p-role").value.trim(), maps,
+    k: num($("p-k").value), d: num($("p-d").value), a: num($("p-a").value), acs: num($("p-acs").value), hs: num($("p-hs").value),
+    wins: Math.min(maps, Math.max(0, Math.round(num($("p-wins").value)))),
+  };
+  if (!rec.name) return;
+  if (editPlayerId) { Object.assign(state.players.find((x) => x.id === editPlayerId), rec); toast("Player updated"); }
+  else { state.players.push({ id: uid(), form: [], ...rec }); toast("Player added"); }
+  save(); resetPlayerForm(); renderAll();
+});
+$("logForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const p = state.players.find((x) => x.id === $("l-player").value); if (!p) { toast("Add a player first"); return; }
+  const k = num($("l-k").value), d = num($("l-d").value), a = num($("l-a").value), acs = num($("l-acs").value), hs = num($("l-hs").value);
+  const n = p.maps;
+  p.acs = Math.round((p.acs * n + acs) / (n + 1));
+  p.hs = Math.round(((p.hs * n + hs) / (n + 1)) * 10) / 10;
+  p.maps = n + 1; p.k += k; p.d += d; p.a += a; if ($("l-won").checked) p.wins += 1;
+  p.form = [...(p.form || []), acs].slice(-7);
+  $("logForm").reset(); $("l-player").value = p.id; save(); renderAll(); toast("Logged for " + p.name);
+});
+
+/* ---------- team + toolbar ---------- */
+[["t-name", "name"], ["t-game", "game"], ["t-region", "region"], ["t-season", "season"]].forEach(([id, key]) => {
+  $(id).addEventListener("input", () => { state.team[key] = $(id).value; save(); renderHeader(); });
+});
+function syncTeamInputs() { $("t-name").value = state.team.name || ""; $("t-game").value = state.team.game || ""; $("t-region").value = state.team.region || ""; $("t-season").value = state.team.season || ""; }
+
+function applyEditMode() {
+  document.body.classList.toggle("edit", editMode);
+  $("editToggle").setAttribute("aria-pressed", editMode);
+  $("editToggle").textContent = editMode ? "Done editing" : "Edit mode";
+  $("editHint").hidden = editMode;
+  try { localStorage.setItem(KEY + "-edit", editMode ? "1" : "0"); } catch (e) {}
+}
+$("editToggle").addEventListener("click", () => { editMode = !editMode; applyEditMode(); });
+
+$("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = (state.team.name || "team").replace(/\W+/g, "-").toLowerCase() + "-backup.json";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("Backup downloaded");
+});
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", () => {
+  const f = $("importFile").files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const x = JSON.parse(r.result);
+      if (!validData(x)) throw new Error("bad");
+      state = x; save(); syncTeamInputs(); resetMatchForm(); resetPlayerForm(); renderAll(); toast("Backup imported");
+    } catch (e) { toast("That file is not a valid backup"); }
+    $("importFile").value = "";
+  };
+  r.readAsText(f);
+});
+$("resetBtn").addEventListener("click", (e) => {
+  armed(e.currentTarget, () => { state = sampleData(); save(); syncTeamInputs(); resetMatchForm(); resetPlayerForm(); renderAll(); toast("Sample data restored"); });
+});
+
+/* ---------- boot ---------- */
+function renderAll() { renderHeader(); renderNext(); renderDays(); renderMatches(); renderAch(); renderTable(); renderPlayers(); }
+$("a-date").value = today();
+resetMatchForm(); syncTeamInputs(); applyEditMode(); renderAll();
+setInterval(renderNext, 30000);
+</script>
+</body>
+</html>
